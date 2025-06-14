@@ -54,6 +54,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Helper functions for session storage
   const saveToSession = (user: User, token?: string) => {
     try {
+      if (typeof window === "undefined") return
+
       sessionStorage.setItem(SESSION_KEYS.USER, JSON.stringify(user))
       if (token) {
         sessionStorage.setItem(SESSION_KEYS.TOKEN, token)
@@ -68,6 +70,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const loadFromSession = (): { user: User | null; isExpired: boolean } => {
     try {
+      if (typeof window === "undefined") return { user: null, isExpired: false }
+
       const userStr = sessionStorage.getItem(SESSION_KEYS.USER)
       const expiresAtStr = sessionStorage.getItem(SESSION_KEYS.EXPIRES_AT)
 
@@ -93,6 +97,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const clearSession = () => {
     try {
+      if (typeof window === "undefined") return
+
       sessionStorage.removeItem(SESSION_KEYS.USER)
       sessionStorage.removeItem(SESSION_KEYS.TOKEN)
       sessionStorage.removeItem(SESSION_KEYS.EXPIRES_AT)
@@ -195,16 +201,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.log("Restored user from session:", sessionUser)
           setUser(sessionUser)
 
-          // Verify the session is still valid with Directus
+          // Verify the session is still valid with Directus (only if we have a token)
           try {
-            const currentUser = await directusService.getCurrentUser()
-            if (currentUser) {
-              // Update session with fresh data
-              saveToSession(currentUser as User)
-              setUser(currentUser as User)
+            const hasToken = await directusService.getToken()
+            if (hasToken) {
+              const currentUser = await directusService.getCurrentUser()
+              if (currentUser) {
+                // Update session with fresh data
+                saveToSession(currentUser as User)
+                setUser(currentUser as User)
+              }
+            } else {
+              // No token but we have session data - session is invalid
+              console.log("No token found, clearing session...")
+              clearSession()
+              setUser(null)
             }
           } catch (error) {
-            console.log("Session invalid, clearing...")
+            console.log("Session validation failed, clearing...")
             clearSession()
             setUser(null)
           }
@@ -213,17 +227,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         // If no session, check if we have a token in Directus service
         const hasToken = await directusService.getToken()
-        console.log("Has token:", hasToken)
+        console.log("Has token:", !!hasToken)
+
         if (!hasToken) {
+          // No token and no session - user is not authenticated
           setUser(null)
           return
         }
 
-        // Try to get current user from Directus
-        const currentUser = await directusService.getCurrentUser()
-        if (currentUser) {
-          saveToSession(currentUser as User)
-          setUser(currentUser as User)
+        // We have a token but no session - try to get user data
+        try {
+          const currentUser = await directusService.getCurrentUser()
+          if (currentUser) {
+            saveToSession(currentUser as User)
+            setUser(currentUser as User)
+          } else {
+            setUser(null)
+          }
+        } catch (error) {
+          console.error("Failed to get user with existing token:", error)
+          // Token is invalid, clear it
+          await directusService.clearToken()
+          setUser(null)
         }
       } catch (error: any) {
         console.error("Auth check error:", error)
@@ -262,6 +287,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Listen for storage changes (for multi-tab support)
   useEffect(() => {
+    if (typeof window === "undefined") return
+
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === SESSION_KEYS.USER) {
         if (e.newValue === null) {

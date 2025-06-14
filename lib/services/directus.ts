@@ -99,14 +99,16 @@ export class DirectusService {
         await this.clearToken()
       }
 
-      throw new Error("Failed to get current user")
+      throw error // Re-throw the original error
     }
   }
 
   async getToken() {
     try {
-      return await this.client.getToken()
+      const token = await this.client.getToken()
+      return token
     } catch (error) {
+      console.log("No token available")
       return null
     }
   }
