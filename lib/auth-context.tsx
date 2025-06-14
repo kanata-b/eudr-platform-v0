@@ -2,7 +2,9 @@
 
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { directusService } from "@/lib/services/directus"
+import { sessionAuth } from "@/lib/session-auth"
 import { useToast } from "@/hooks/use-toast"
 
 interface User {
@@ -37,87 +39,31 @@ interface AuthProviderProps {
   children: React.ReactNode
 }
 
-// Session storage keys
-const SESSION_KEYS = {
-  USER: "eudr_user",
-  TOKEN: "eudr_token",
-  EXPIRES_AT: "eudr_expires_at",
-} as const
-
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
   const { toast } = useToast()
 
   const isAuthenticated = !!user
 
-  // Helper functions for session storage
-  const saveToSession = (user: User, token?: string) => {
-    try {
-      if (typeof window === "undefined") return
-
-      sessionStorage.setItem(SESSION_KEYS.USER, JSON.stringify(user))
-      if (token) {
-        sessionStorage.setItem(SESSION_KEYS.TOKEN, token)
-        // Set expiration to 24 hours from now
-        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-        sessionStorage.setItem(SESSION_KEYS.EXPIRES_AT, expiresAt)
-      }
-    } catch (error) {
-      console.error("Failed to save to session storage:", error)
-    }
-  }
-
-  const loadFromSession = (): { user: User | null; isExpired: boolean } => {
-    try {
-      if (typeof window === "undefined") return { user: null, isExpired: false }
-
-      const userStr = sessionStorage.getItem(SESSION_KEYS.USER)
-      const expiresAtStr = sessionStorage.getItem(SESSION_KEYS.EXPIRES_AT)
-
-      if (!userStr) {
-        return { user: null, isExpired: false }
-      }
-
-      // Check if session is expired
-      const isExpired = expiresAtStr ? new Date(expiresAtStr) < new Date() : false
-
-      if (isExpired) {
-        clearSession()
-        return { user: null, isExpired: true }
-      }
-
-      const user = JSON.parse(userStr) as User
-      return { user, isExpired: false }
-    } catch (error) {
-      console.error("Failed to load from session storage:", error)
-      return { user: null, isExpired: false }
-    }
-  }
-
-  const clearSession = () => {
-    try {
-      if (typeof window === "undefined") return
-
-      sessionStorage.removeItem(SESSION_KEYS.USER)
-      sessionStorage.removeItem(SESSION_KEYS.TOKEN)
-      sessionStorage.removeItem(SESSION_KEYS.EXPIRES_AT)
-    } catch (error) {
-      console.error("Failed to clear session storage:", error)
-    }
-  }
-
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true)
+
+      // Login with Directus
       const loginResult = await directusService.login(email, password)
 
       // Get user info after successful login
       const currentUser = await directusService.getCurrentUser()
-      console.log("Login successful:", currentUser)
 
-      // Save to session storage
-      saveToSession(currentUser as User, loginResult?.access_token)
+      // Store token in sessionStorage
+      if (loginResult?.access_token) {
+        sessionAuth.setToken(loginResult.access_token, "directus")
+      }
+
+      // Store user session data
+      sessionAuth.setSession(currentUser)
 
       setUser(currentUser as User)
 
@@ -125,10 +71,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         title: "Success",
         description: "Logged in successfully",
       })
+
+      // Redirect to dashboard
+      router.push("/dashboard")
     } catch (error: any) {
       console.error("Login error:", error)
       setUser(null)
-      clearSession()
+      sessionAuth.clearTokens()
 
       toast({
         title: "Error",
@@ -144,23 +93,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = async () => {
     try {
       setIsLoading(true)
+
+      // Logout from Directus
       await directusService.logout()
       await directusService.clearToken()
 
       // Clear session storage
-      clearSession()
+      sessionAuth.clearTokens()
       setUser(null)
 
       toast({
         title: "Success",
         description: "Logged out successfully",
       })
+
+      // Redirect to signin
+      router.push("/auth/signin")
     } catch (error: any) {
       console.error("Logout error:", error)
       // Still clear user state and session even if logout fails
       setUser(null)
-      clearSession()
+      sessionAuth.clearTokens()
       await directusService.clearToken()
+      router.push("/auth/signin")
     } finally {
       setIsLoading(false)
     }
@@ -172,12 +127,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const currentUser = await directusService.getCurrentUser()
 
       // Update session storage with fresh user data
-      saveToSession(currentUser as User)
+      sessionAuth.setSession(currentUser)
       setUser(currentUser as User)
     } catch (error: any) {
       console.error("Refresh error:", error)
       setUser(null)
-      clearSession()
+      sessionAuth.clearTokens()
       await directusService.clearToken()
     }
   }
@@ -188,48 +143,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         setIsLoading(true)
 
-        // First, check session storage
-        const { user: sessionUser, isExpired } = loadFromSession()
+        // First, check sessionStorage
+        const sessionUser = sessionAuth.getSession()
+        const hasToken = sessionAuth.isAuthenticated()
 
-        if (isExpired) {
-          console.log("Session expired, clearing...")
-          setUser(null)
-          return
-        }
-
-        if (sessionUser) {
+        if (sessionUser && hasToken) {
           console.log("Restored user from session:", sessionUser)
           setUser(sessionUser)
 
-          // Verify the session is still valid with Directus (only if we have a token)
+          // Verify the session is still valid with Directus
           try {
-            const hasToken = await directusService.getToken()
-            if (hasToken) {
-              const currentUser = await directusService.getCurrentUser()
-              if (currentUser) {
-                // Update session with fresh data
-                saveToSession(currentUser as User)
-                setUser(currentUser as User)
-              }
-            } else {
-              // No token but we have session data - session is invalid
-              console.log("No token found, clearing session...")
-              clearSession()
-              setUser(null)
+            const currentUser = await directusService.getCurrentUser()
+            if (currentUser) {
+              // Update session with fresh data
+              sessionAuth.setSession(currentUser)
+              setUser(currentUser as User)
             }
           } catch (error) {
             console.log("Session validation failed, clearing...")
-            clearSession()
+            sessionAuth.clearTokens()
             setUser(null)
           }
           return
         }
 
         // If no session, check if we have a token in Directus service
-        const hasToken = await directusService.getToken()
-        console.log("Has token:", !!hasToken)
+        const directusToken = await directusService.getToken()
+        console.log("Has Directus token:", !!directusToken)
 
-        if (!hasToken) {
+        if (!directusToken) {
           // No token and no session - user is not authenticated
           setUser(null)
           return
@@ -239,7 +181,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
           const currentUser = await directusService.getCurrentUser()
           if (currentUser) {
-            saveToSession(currentUser as User)
+            sessionAuth.setSession(currentUser)
             setUser(currentUser as User)
           } else {
             setUser(null)
@@ -248,13 +190,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.error("Failed to get user with existing token:", error)
           // Token is invalid, clear it
           await directusService.clearToken()
+          sessionAuth.clearTokens()
           setUser(null)
         }
       } catch (error: any) {
         console.error("Auth check error:", error)
         // Clear any invalid tokens and session
         await directusService.clearToken()
-        clearSession()
+        sessionAuth.clearTokens()
         setUser(null)
       } finally {
         setIsLoading(false)
@@ -275,7 +218,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } catch (error) {
           console.error("Auto-refresh failed:", error)
           setUser(null)
-          clearSession()
+          sessionAuth.clearTokens()
           await directusService.clearToken()
         }
       },
@@ -284,31 +227,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return () => clearInterval(interval)
   }, [isAuthenticated])
-
-  // Listen for storage changes (for multi-tab support)
-  useEffect(() => {
-    if (typeof window === "undefined") return
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === SESSION_KEYS.USER) {
-        if (e.newValue === null) {
-          // User was logged out in another tab
-          setUser(null)
-        } else if (e.newValue) {
-          // User was logged in in another tab
-          try {
-            const newUser = JSON.parse(e.newValue) as User
-            setUser(newUser)
-          } catch (error) {
-            console.error("Failed to parse user from storage event:", error)
-          }
-        }
-      }
-    }
-
-    window.addEventListener("storage", handleStorageChange)
-    return () => window.removeEventListener("storage", handleStorageChange)
-  }, [])
 
   const value: AuthContextType = {
     user,
