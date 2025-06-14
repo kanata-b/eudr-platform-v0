@@ -1,182 +1,159 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, CheckCircle, RefreshCw } from "lucide-react"
-import { checkDirectusHealth, checkDirectusConnection } from "@/lib/directus-health"
+import Image from "next/image"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { CheckCircle, Shield, Globe, BarChart3, Users, FileText } from "lucide-react"
 
-type DirectusStatus = {
-  status: "checking" | "online" | "offline"
-  error?: string
-  lastChecked?: Date
-}
-
-export default function HomePage() {
-  const { isAuthenticated, isLoading } = useAuth()
-  const [directusStatus, setDirectusStatus] = useState<DirectusStatus>({
-    status: "checking",
-  })
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.push("/dashboard")
-    }
-  }, [isAuthenticated, isLoading, router])
-
-  const checkDirectusStatus = async () => {
-    setDirectusStatus({ status: "checking" })
-
-    const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL || "http://localhost:8055"
-
-    // Try primary health check first
-    const healthResult = await checkDirectusHealth(directusUrl)
-
-    if (healthResult.isOnline) {
-      setDirectusStatus({
-        status: "online",
-        lastChecked: new Date(),
-      })
-      return
-    }
-
-    // If primary fails, try alternative connection check
-    const connectionResult = await checkDirectusConnection(directusUrl)
-
-    setDirectusStatus({
-      status: connectionResult.isOnline ? "online" : "offline",
-      error: healthResult.error || connectionResult.error,
-      lastChecked: new Date(),
-    })
-  }
-
-  useEffect(() => {
-    checkDirectusStatus()
-  }, [])
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-svh items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (isAuthenticated) {
-    return null // Will redirect to dashboard
-  }
-
-  const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL || "http://localhost:8055"
-
+export default function LandingPage() {
   return (
-    <div className="min-h-svh">
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
-      <div className="flex min-h-svh items-center justify-center">
-        <div className="flex flex-col items-center gap-4 max-w-md">
-          <h1 className="text-4xl font-bold">EUDR Platform</h1>
-          <p className="text-muted-foreground text-center">
-            European Union Deforestation Regulation compliance platform for exporters
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-900">
+      {/* Header */}
+      <header className="container mx-auto px-4 py-6">
+        <nav className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Image src="/logo.png" alt="EUDR Platform Logo" width={40} height={40} className="rounded-full" />
+            <span className="text-xl font-bold text-green-800 dark:text-green-200">EUDR Platform</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Link href="/auth/signin">
+              <Button variant="ghost" className="text-green-700 hover:text-green-800 dark:text-green-300">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/auth/signin">
+              <Button className="bg-green-600 hover:bg-green-700 text-white">Get Started</Button>
+            </Link>
+          </div>
+        </nav>
+      </header>
+
+      {/* Hero Section */}
+      <section className="container mx-auto px-4 py-20 text-center">
+        <div className="max-w-4xl mx-auto">
+          <Badge className="mb-4 bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+            EU Deforestation Regulation Compliance
+          </Badge>
+          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-6">
+            Streamline Your Supply Chain Compliance
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+            Ensure EUDR compliance with our comprehensive platform for tracking, managing, and reporting on your supply
+            chain's deforestation risk.
           </p>
-
-          {/* Directus Status */}
-          <div className="w-full">
-            {directusStatus.status === "checking" && (
-              <Alert>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                <AlertDescription>Checking Directus connection...</AlertDescription>
-              </Alert>
-            )}
-
-            {directusStatus.status === "online" && (
-              <Alert className="border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
-                <CheckCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Directus is online and ready
-                  {directusStatus.lastChecked && (
-                    <div className="text-xs mt-1 opacity-70">
-                      Last checked: {directusStatus.lastChecked.toLocaleTimeString()}
-                    </div>
-                  )}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {directusStatus.status === "offline" && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <div className="space-y-2">
-                    <div>Cannot connect to Directus</div>
-                    <div className="text-xs">
-                      <strong>URL:</strong> <code>{directusUrl}</code>
-                    </div>
-                    {directusStatus.error && (
-                      <div className="text-xs">
-                        <strong>Error:</strong> {directusStatus.error}
-                      </div>
-                    )}
-                    <div className="text-xs mt-2">
-                      <strong>Troubleshooting:</strong>
-                      <ul className="list-disc list-inside mt-1 space-y-1">
-                        <li>Make sure Directus is running on {directusUrl}</li>
-                        <li>Check if the URL in your .env.local is correct</li>
-                        <li>Verify CORS settings in Directus</li>
-                      </ul>
-                    </div>
-                  </div>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Retry button for offline status */}
-            {directusStatus.status === "offline" && (
-              <div className="flex justify-center mt-2">
-                <Button variant="outline" size="sm" onClick={checkDirectusStatus} className="gap-2">
-                  <RefreshCw className="h-4 w-4" />
-                  Retry Connection
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-4 mt-6">
-            <Button asChild disabled={directusStatus.status === "offline"}>
-              <Link href="/auth/signin">Sign In</Link>
-            </Button>
-            <Button variant="outline" asChild disabled={directusStatus.status === "offline"}>
-              <Link href="/auth/signin">Get Started</Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/auth/signin">
+              <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-3">
+                Start Free Trial
+              </Button>
+            </Link>
+            <Button size="lg" variant="outline" className="border-green-600 text-green-600 hover:bg-green-50 px-8 py-3">
+              Watch Demo
             </Button>
           </div>
-
-          {/* Development helper */}
-          {process.env.NODE_ENV === "development" && (
-            <div className="mt-4 p-3 bg-muted rounded-lg text-xs">
-              <div className="font-medium mb-2">Development Info:</div>
-              <div>
-                Directus URL: <code>{directusUrl}</code>
-              </div>
-              <div>
-                Status: <code>{directusStatus.status}</code>
-              </div>
-              {directusStatus.error && (
-                <div>
-                  Error: <code>{directusStatus.error}</code>
-                </div>
-              )}
-            </div>
-          )}
         </div>
-      </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            Everything You Need for EUDR Compliance
+          </h2>
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            Our platform provides comprehensive tools to manage your supply chain and ensure compliance with EU
+            Deforestation Regulation requirements.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <Card className="border-green-200 dark:border-green-800">
+            <CardHeader>
+              <Shield className="h-10 w-10 text-green-600 mb-2" />
+              <CardTitle>Risk Assessment</CardTitle>
+              <CardDescription>
+                Comprehensive risk analysis for all your supply chain partners and materials.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-green-200 dark:border-green-800">
+            <CardHeader>
+              <Globe className="h-10 w-10 text-green-600 mb-2" />
+              <CardTitle>Origin Tracking</CardTitle>
+              <CardDescription>Track the geographic origin of your raw materials with precision.</CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-green-200 dark:border-green-800">
+            <CardHeader>
+              <FileText className="h-10 w-10 text-green-600 mb-2" />
+              <CardTitle>Due Diligence</CardTitle>
+              <CardDescription>Automated due diligence processes to ensure regulatory compliance.</CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-green-200 dark:border-green-800">
+            <CardHeader>
+              <BarChart3 className="h-10 w-10 text-green-600 mb-2" />
+              <CardTitle>Compliance Dashboard</CardTitle>
+              <CardDescription>Real-time insights and reporting on your compliance status.</CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-green-200 dark:border-green-800">
+            <CardHeader>
+              <Users className="h-10 w-10 text-green-600 mb-2" />
+              <CardTitle>Supplier Management</CardTitle>
+              <CardDescription>Manage and monitor all your suppliers and their compliance status.</CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-green-200 dark:border-green-800">
+            <CardHeader>
+              <CheckCircle className="h-10 w-10 text-green-600 mb-2" />
+              <CardTitle>Automated Reporting</CardTitle>
+              <CardDescription>Generate compliance reports automatically for regulatory submissions.</CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="bg-green-600 rounded-2xl p-12 text-center text-white">
+          <h2 className="text-3xl font-bold mb-4">Ready to Ensure EUDR Compliance?</h2>
+          <p className="text-xl mb-8 opacity-90">
+            Join hundreds of companies already using our platform to manage their supply chain compliance.
+          </p>
+          <Link href="/auth/signin">
+            <Button size="lg" variant="secondary" className="bg-white text-green-600 hover:bg-gray-100 px-8 py-3">
+              Get Started Today
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="container mx-auto px-4 py-8 border-t border-green-200 dark:border-green-800">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Image src="/logo.png" alt="EUDR Platform Logo" width={24} height={24} className="rounded-full" />
+            <span className="text-sm text-gray-600 dark:text-gray-400">© 2024 EUDR Platform. All rights reserved.</span>
+          </div>
+          <div className="flex space-x-6 text-sm text-gray-600 dark:text-gray-400">
+            <Link href="#" className="hover:text-green-600">
+              Privacy Policy
+            </Link>
+            <Link href="#" className="hover:text-green-600">
+              Terms of Service
+            </Link>
+            <Link href="#" className="hover:text-green-600">
+              Contact
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
