@@ -3,7 +3,8 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
-import { mockApi } from "@/lib/mock-api"
+import { hybridApi } from "@/lib/hybrid-api"
+import { useOfflineMode } from "@/lib/offline-context"
 import type { Organization, CreateOrganizationData } from "@/types"
 
 export function useOrganizations() {
@@ -20,11 +21,12 @@ export function useOrganizations() {
     registration_number: "",
   })
   const { toast } = useToast()
+  const { isOffline } = useOfflineMode()
 
   const loadOrganizations = async () => {
     try {
       setIsLoading(true)
-      const data = await mockApi.organization.list()
+      const data = await hybridApi.organization.list()
       setOrganizations(data)
     } catch (error) {
       toast({
@@ -41,16 +43,16 @@ export function useOrganizations() {
     e.preventDefault()
     try {
       if (editingOrg) {
-        await mockApi.organization.update(editingOrg.id, formData)
+        await hybridApi.organization.update(editingOrg.id, formData)
         toast({
           title: "Success",
-          description: "Organization updated successfully",
+          description: `Organization updated successfully ${isOffline ? "(Demo Mode)" : ""}`,
         })
       } else {
-        await mockApi.organization.create(formData)
+        await hybridApi.organization.create(formData)
         toast({
           title: "Success",
-          description: "Organization created successfully",
+          description: `Organization created successfully ${isOffline ? "(Demo Mode)" : ""}`,
         })
       }
       resetForm()
@@ -79,10 +81,10 @@ export function useOrganizations() {
 
   const handleDelete = async (id: string) => {
     try {
-      await mockApi.organization.delete(id)
+      await hybridApi.organization.delete(id)
       toast({
         title: "Success",
-        description: "Organization deleted successfully",
+        description: `Organization deleted successfully ${isOffline ? "(Demo Mode)" : ""}`,
       })
       loadOrganizations()
     } catch (error) {
@@ -111,6 +113,11 @@ export function useOrganizations() {
     resetForm()
     setIsDialogOpen(true)
   }
+
+  // Reload data when switching between offline/online modes
+  useEffect(() => {
+    loadOrganizations()
+  }, [isOffline])
 
   useEffect(() => {
     loadOrganizations()

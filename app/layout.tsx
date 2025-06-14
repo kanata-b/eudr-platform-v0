@@ -5,6 +5,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/lib/auth-context"
 import { TRPCProvider } from "@/lib/trpc-provider"
+import { OfflineProvider } from "@/lib/offline-context"
 import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -12,7 +13,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "EUDR Platform - Exporter Management",
   description: "European Union Deforestation Regulation compliance platform for exporters",
-    generator: 'v0.dev'
+  generator: "v0.dev",
 }
 
 export default function RootLayout({
@@ -23,14 +24,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationOnChange>
       <body className={inter.className}>
-        <TRPCProvider>
-          <AuthProvider>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-              {children}
-              <Toaster />
-            </ThemeProvider>
-          </AuthProvider>
-        </TRPCProvider>
+        <OfflineProvider>
+          <TRPCProvider>
+            <AuthProvider>
+              <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+                {children}
+                <Toaster />
+              </ThemeProvider>
+            </AuthProvider>
+          </TRPCProvider>
+        </OfflineProvider>
       </body>
     </html>
   )

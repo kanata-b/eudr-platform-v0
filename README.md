@@ -15,8 +15,8 @@ openssl rand -base64 32
 \`\`\`
 
 Update `.env.local` with your values:
-- `NEXT_PUBLIC_DIRECTUS_URL`: Your Directus instance URL
 - `NEXTAUTH_SECRET`: Generated secret key
+- `NEXTAUTH_URL`: Your application URL (default: http://localhost:3000)
 
 ### 2. Install Dependencies
 
@@ -32,32 +32,25 @@ npm run dev
 
 Visit [http://localhost:3000](http://localhost:3000) to see the application.
 
-## Directus Setup
+## Demo Mode
 
-This application connects to a Directus backend via the public API. You can:
+The application includes a comprehensive demo mode with mock data stored in localStorage:
 
-### Option 1: Use Directus Cloud
-1. Create account at [directus.cloud](https://directus.cloud)
-2. Create new project
-3. Copy your project URL to `NEXT_PUBLIC_DIRECTUS_URL`
+- **Automatic Setup**: Mock data loads automatically on first visit
+- **Persistent Storage**: Data survives browser refresh
+- **Realistic Scenarios**: Coffee and cocoa supply chain examples
+- **Complete CRUD**: Full create, read, update, delete operations
+- **No Backend Required**: Perfect for demos and development
 
-### Option 2: Self-hosted Directus
-1. Install Directus: `npm install -g @directus/cli`
-2. Create project: `npx create-directus-project my-project`
-3. Start Directus: `cd my-project && npx directus start`
-4. Set `NEXT_PUBLIC_DIRECTUS_URL=http://localhost:8055`
-
-### Required Collections
-
-The application expects these Directus collections:
-- `organizations`
-- `customers` 
-- `products`
-- `suppliers`
-- `raw_materials`
-- `origins`
-- `risk_assessments`
-- `due_diligence_statements`
+### Mock Data Includes:
+- Organizations (Coffee & Cocoa exporters)
+- Customers (European buyers)
+- Products (Coffee & Cocoa beans)
+- Suppliers (Farms & Cooperatives)
+- Raw Materials (Coffee cherries & Cocoa pods)
+- Origins (Brazil & Ghana locations)
+- Risk Assessments (Various risk levels)
+- Due Diligence Statements (Different compliance states)
 
 ## Features
 
@@ -68,14 +61,19 @@ The application expects these Directus collections:
 - 🌍 **Origin Tracking** - Geographic origin management
 - ⚠️ **Risk Assessment** - Compliance risk evaluation
 - 📋 **Due Diligence** - Statement generation and management
+- 📊 **Dashboard Analytics** - Compliance overview and statistics
+- 🎯 **Demo Mode** - Complete offline demo with mock data
 
 ## Tech Stack
 
 - **Frontend**: Next.js 15, React 19, TypeScript
-- **Backend**: Directus (Headless CMS)
 - **UI**: shadcn/ui, Tailwind CSS
-- **Authentication**: Directus Auth
-- **API**: oRPC for type-safe APIs
+- **API**: tRPC for type-safe APIs
+- **Authentication**: NextAuth.js
+- **Storage**: localStorage for demo mode
+- **State Management**: TanStack Query (React Query)
+- **Validation**: Zod schemas
+- **Styling**: Tailwind CSS with dark mode support
 
 ## Development
 
@@ -100,10 +98,44 @@ npm run lint
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `NEXT_PUBLIC_DIRECTUS_URL` | Directus instance URL | `http://localhost:8055` |
 | `NEXTAUTH_URL` | Application base URL | `http://localhost:3000` |
 | `NEXTAUTH_SECRET` | NextAuth encryption secret | Required |
-| `NEXT_PUBLIC_API_URL` | API endpoint URL | `http://localhost:3000/api` |
+
+## API Structure
+
+The application uses tRPC for type-safe API calls with the following routers:
+
+- **Organizations** - `/api/trpc/organization.*`
+- **Customers** - `/api/trpc/customer.*`
+- **Products** - `/api/trpc/product.*`
+- **Suppliers** - `/api/trpc/supplier.*`
+- **Raw Materials** - `/api/trpc/rawMaterial.*`
+- **Origins** - `/api/trpc/origin.*`
+- **Risk Assessments** - `/api/trpc/riskAssessment.*`
+- **Due Diligence** - `/api/trpc/dueDiligence.*`
+- **Dashboard** - `/api/trpc/dashboard.*`
+
+## Project Structure
+
+\`\`\`
+├── app/                    # Next.js app directory
+│   ├── (dashboard)/       # Dashboard pages
+│   ├── api/trpc/          # tRPC API routes
+│   └── auth/              # Authentication pages
+├── components/            # React components
+│   ├── ui/               # shadcn/ui components
+│   ├── dashboard/        # Dashboard components
+│   └── [entity]/         # Entity-specific components
+├── hooks/                # Custom React hooks
+├── lib/                  # Utility libraries
+│   ├── server/           # Server-side utilities
+│   ├── validations/      # Zod validation schemas
+│   ├── mock-data.ts      # Demo mock data
+│   ├── mock-api.ts       # Mock API implementation
+│   └── local-storage.ts  # localStorage utilities
+├── types/                # TypeScript type definitions
+└── styles/               # Global styles
+\`\`\`
 
 ## Deployment
 
@@ -119,6 +151,15 @@ npm run lint
 1. Build the application: `npm run build`
 2. Set environment variables
 3. Start with: `npm start`
+
+## Demo Usage
+
+Perfect for:
+- **Sales Demonstrations** - Realistic EUDR compliance scenarios
+- **User Testing** - Consistent data across test sessions
+- **Development** - No backend setup required
+- **Training** - Standardized demo environment
+- **Prototyping** - Quick setup for stakeholder reviews
 
 ## Contributing
 
