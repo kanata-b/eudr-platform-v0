@@ -1,8 +1,15 @@
-export async function checkDirectusHealth(url: string): Promise<{
-  isOnline: boolean
-  error?: string
-  status?: number
-}> {
+type HealthStatus = {
+  isOnline: boolean;
+  error?: string;
+  status?: string;
+};
+
+type DirectusHealthResponse = {
+  status: string; 
+}
+
+
+export async function checkDirectusHealth(url: string): Promise<HealthStatus> {
   try {
     console.log(url)
     // Add timeout to prevent hanging
@@ -11,6 +18,7 @@ export async function checkDirectusHealth(url: string): Promise<{
 
     // Try the server health endpoint first
     let response: Response
+    let data: DirectusHealthResponse | undefined = undefined
     try {
       response = await fetch(`${url}/server/health`, {
         method: "GET",
@@ -20,6 +28,7 @@ export async function checkDirectusHealth(url: string): Promise<{
         signal: controller.signal,
         cache: "no-cache",
       })
+      data = await response.json() as DirectusHealthResponse
     } catch (healthError) {
       // If health endpoint fails, try the root endpoint
       response = await fetch(`${url}/`, {
@@ -27,14 +36,21 @@ export async function checkDirectusHealth(url: string): Promise<{
         signal: controller.signal,
         cache: "no-cache",
       })
+      try {
+        data = await response.json() as DirectusHealthResponse
+      } catch {
+        data = { status: "error" }
+      }
     }
 
     clearTimeout(timeoutId)
-
+    if (data === undefined) {
+      data = { status: "error" }; // Fallback if no data returned
+    }
     return {
-      isOnline: response.status == "ok",
-      status: response.status,
-      error: response.status == "ok" ? undefined : `HTTP ${response.status}`,
+      isOnline: data.status == "ok",
+      status: data.status,
+      error: data.status == "ok" ? undefined : `HTTP ${data.status}`,
     }
   } catch (error) {
     console.error("Directus health check failed:", error)
