@@ -1,5 +1,5 @@
 import { mockApi } from "@/lib/mock-api"
-import { api } from "@/lib/trpc-client"
+import { directusService } from "@/lib/services/directus"
 import type {
   Organization,
   Customer,
@@ -25,7 +25,7 @@ function isOfflineMode(): boolean {
   return localStorage.getItem("eudr_offline_mode") === "true"
 }
 
-// Hybrid API that switches between mock and real API based on offline mode
+// Hybrid API that switches between mock and Directus SDK based on offline mode
 export const hybridApi = {
   // Organizations
   organization: {
@@ -34,7 +34,7 @@ export const hybridApi = {
         return mockApi.organization.list()
       }
       try {
-        const result = await api.organization.list.query()
+        const result = await directusService.getOrganizations()
         return result
       } catch (error) {
         console.error("Failed to fetch organizations:", error)
@@ -47,7 +47,7 @@ export const hybridApi = {
         return mockApi.organization.get(id)
       }
       try {
-        const result = await api.organization.get.query({ id })
+        const result = await directusService.getItem<Organization>("organizations", id)
         return result
       } catch (error) {
         console.error("Failed to fetch organization:", error)
@@ -59,7 +59,10 @@ export const hybridApi = {
         return mockApi.organization.create(data)
       }
       try {
-        const result = await api.organization.create.mutate(data)
+        const result = await directusService.createItem<Organization>("organizations", {
+          ...data,
+          created_at: new Date().toISOString(),
+        })
         return result
       } catch (error) {
         console.error("Failed to create organization:", error)
@@ -71,7 +74,7 @@ export const hybridApi = {
         return mockApi.organization.update(id, data)
       }
       try {
-        const result = await api.organization.update.mutate({ id, data })
+        const result = await directusService.updateItem<Organization>("organizations", id, data)
         return result
       } catch (error) {
         console.error("Failed to update organization:", error)
@@ -83,8 +86,8 @@ export const hybridApi = {
         return mockApi.organization.delete(id)
       }
       try {
-        const result = await api.organization.delete.mutate({ id })
-        return result.success
+        await directusService.deleteItem("organizations", id)
+        return true
       } catch (error) {
         console.error("Failed to delete organization:", error)
         return mockApi.organization.delete(id)
@@ -99,7 +102,7 @@ export const hybridApi = {
         return mockApi.customer.list()
       }
       try {
-        const result = await api.customer.list.query()
+        const result = await directusService.getCustomers()
         return result
       } catch (error) {
         console.error("Failed to fetch customers:", error)
@@ -111,7 +114,7 @@ export const hybridApi = {
         return mockApi.customer.get(id)
       }
       try {
-        const result = await api.customer.get.query({ id })
+        const result = await directusService.getItem<Customer>("customers", id)
         return result
       } catch (error) {
         console.error("Failed to fetch customer:", error)
@@ -123,7 +126,10 @@ export const hybridApi = {
         return mockApi.customer.create(data)
       }
       try {
-        const result = await api.customer.create.mutate(data)
+        const result = await directusService.createItem<Customer>("customers", {
+          ...data,
+          created_at: new Date().toISOString(),
+        })
         return result
       } catch (error) {
         console.error("Failed to create customer:", error)
@@ -135,7 +141,7 @@ export const hybridApi = {
         return mockApi.customer.update(id, data)
       }
       try {
-        const result = await api.customer.update.mutate({ id, data })
+        const result = await directusService.updateItem<Customer>("customers", id, data)
         return result
       } catch (error) {
         console.error("Failed to update customer:", error)
@@ -147,8 +153,8 @@ export const hybridApi = {
         return mockApi.customer.delete(id)
       }
       try {
-        const result = await api.customer.delete.mutate({ id })
-        return result.success
+        await directusService.deleteItem("customers", id)
+        return true
       } catch (error) {
         console.error("Failed to delete customer:", error)
         return mockApi.customer.delete(id)
@@ -163,7 +169,7 @@ export const hybridApi = {
         return mockApi.product.list()
       }
       try {
-        const result = await api.product.list.query()
+        const result = await directusService.getProducts()
         return result
       } catch (error) {
         console.error("Failed to fetch products:", error)
@@ -175,7 +181,7 @@ export const hybridApi = {
         return mockApi.product.get(id)
       }
       try {
-        const result = await api.product.get.query({ id })
+        const result = await directusService.getItem<Product>("products", id)
         return result
       } catch (error) {
         console.error("Failed to fetch product:", error)
@@ -187,7 +193,10 @@ export const hybridApi = {
         return mockApi.product.create(data)
       }
       try {
-        const result = await api.product.create.mutate(data)
+        const result = await directusService.createItem<Product>("products", {
+          ...data,
+          created_at: new Date().toISOString(),
+        })
         return result
       } catch (error) {
         console.error("Failed to create product:", error)
@@ -199,7 +208,7 @@ export const hybridApi = {
         return mockApi.product.update(id, data)
       }
       try {
-        const result = await api.product.update.mutate({ id, data })
+        const result = await directusService.updateItem<Product>("products", id, data)
         return result
       } catch (error) {
         console.error("Failed to update product:", error)
@@ -211,8 +220,8 @@ export const hybridApi = {
         return mockApi.product.delete(id)
       }
       try {
-        const result = await api.product.delete.mutate({ id })
-        return result.success
+        await directusService.deleteItem("products", id)
+        return true
       } catch (error) {
         console.error("Failed to delete product:", error)
         return mockApi.product.delete(id)
@@ -227,7 +236,7 @@ export const hybridApi = {
         return mockApi.supplier.list()
       }
       try {
-        const result = await api.supplier.list.query()
+        const result = await directusService.getSuppliers()
         return result
       } catch (error) {
         console.error("Failed to fetch suppliers:", error)
@@ -239,7 +248,7 @@ export const hybridApi = {
         return mockApi.supplier.get(id)
       }
       try {
-        const result = await api.supplier.get.query({ id })
+        const result = await directusService.getItem<Supplier>("suppliers", id)
         return result
       } catch (error) {
         console.error("Failed to fetch supplier:", error)
@@ -251,7 +260,10 @@ export const hybridApi = {
         return mockApi.supplier.create(data)
       }
       try {
-        const result = await api.supplier.create.mutate(data)
+        const result = await directusService.createItem<Supplier>("suppliers", {
+          ...data,
+          created_at: new Date().toISOString(),
+        })
         return result
       } catch (error) {
         console.error("Failed to create supplier:", error)
@@ -263,7 +275,7 @@ export const hybridApi = {
         return mockApi.supplier.update(id, data)
       }
       try {
-        const result = await api.supplier.update.mutate({ id, data })
+        const result = await directusService.updateItem<Supplier>("suppliers", id, data)
         return result
       } catch (error) {
         console.error("Failed to update supplier:", error)
@@ -275,8 +287,8 @@ export const hybridApi = {
         return mockApi.supplier.delete(id)
       }
       try {
-        const result = await api.supplier.delete.mutate({ id })
-        return result.success
+        await directusService.deleteItem("suppliers", id)
+        return true
       } catch (error) {
         console.error("Failed to delete supplier:", error)
         return mockApi.supplier.delete(id)
@@ -291,7 +303,7 @@ export const hybridApi = {
         return mockApi.rawMaterial.list()
       }
       try {
-        const result = await api.rawMaterial.list.query()
+        const result = await directusService.getRawMaterials()
         return result
       } catch (error) {
         console.error("Failed to fetch raw materials:", error)
@@ -303,7 +315,7 @@ export const hybridApi = {
         return mockApi.rawMaterial.get(id)
       }
       try {
-        const result = await api.rawMaterial.get.query({ id })
+        const result = await directusService.getItem<RawMaterial>("raw_materials", id)
         return result
       } catch (error) {
         console.error("Failed to fetch raw material:", error)
@@ -315,7 +327,10 @@ export const hybridApi = {
         return mockApi.rawMaterial.create(data)
       }
       try {
-        const result = await api.rawMaterial.create.mutate(data)
+        const result = await directusService.createItem<RawMaterial>("raw_materials", {
+          ...data,
+          created_at: new Date().toISOString(),
+        })
         return result
       } catch (error) {
         console.error("Failed to create raw material:", error)
@@ -327,7 +342,7 @@ export const hybridApi = {
         return mockApi.rawMaterial.update(id, data)
       }
       try {
-        const result = await api.rawMaterial.update.mutate({ id, data })
+        const result = await directusService.updateItem<RawMaterial>("raw_materials", id, data)
         return result
       } catch (error) {
         console.error("Failed to update raw material:", error)
@@ -339,8 +354,8 @@ export const hybridApi = {
         return mockApi.rawMaterial.delete(id)
       }
       try {
-        const result = await api.rawMaterial.delete.mutate({ id })
-        return result.success
+        await directusService.deleteItem("raw_materials", id)
+        return true
       } catch (error) {
         console.error("Failed to delete raw material:", error)
         return mockApi.rawMaterial.delete(id)
@@ -355,7 +370,7 @@ export const hybridApi = {
         return mockApi.origin.list()
       }
       try {
-        const result = await api.origin.list.query()
+        const result = await directusService.getOrigins()
         return result
       } catch (error) {
         console.error("Failed to fetch origins:", error)
@@ -367,7 +382,7 @@ export const hybridApi = {
         return mockApi.origin.get(id)
       }
       try {
-        const result = await api.origin.get.query({ id })
+        const result = await directusService.getItem<Origin>("origins", id)
         return result
       } catch (error) {
         console.error("Failed to fetch origin:", error)
@@ -379,7 +394,10 @@ export const hybridApi = {
         return mockApi.origin.create(data)
       }
       try {
-        const result = await api.origin.create.mutate(data)
+        const result = await directusService.createItem<Origin>("origins", {
+          ...data,
+          created_at: new Date().toISOString(),
+        })
         return result
       } catch (error) {
         console.error("Failed to create origin:", error)
@@ -391,7 +409,7 @@ export const hybridApi = {
         return mockApi.origin.update(id, data)
       }
       try {
-        const result = await api.origin.update.mutate({ id, data })
+        const result = await directusService.updateItem<Origin>("origins", id, data)
         return result
       } catch (error) {
         console.error("Failed to update origin:", error)
@@ -403,8 +421,8 @@ export const hybridApi = {
         return mockApi.origin.delete(id)
       }
       try {
-        const result = await api.origin.delete.mutate({ id })
-        return result.success
+        await directusService.deleteItem("origins", id)
+        return true
       } catch (error) {
         console.error("Failed to delete origin:", error)
         return mockApi.origin.delete(id)
@@ -419,7 +437,7 @@ export const hybridApi = {
         return mockApi.riskAssessment.list()
       }
       try {
-        const result = await api.riskAssessment.list.query()
+        const result = await directusService.getRiskAssessments()
         return result
       } catch (error) {
         console.error("Failed to fetch risk assessments:", error)
@@ -431,7 +449,7 @@ export const hybridApi = {
         return mockApi.riskAssessment.get(id)
       }
       try {
-        const result = await api.riskAssessment.get.query({ id })
+        const result = await directusService.getItem<RiskAssessment>("risk_assessments", id)
         return result
       } catch (error) {
         console.error("Failed to fetch risk assessment:", error)
@@ -443,7 +461,10 @@ export const hybridApi = {
         return mockApi.riskAssessment.create(data)
       }
       try {
-        const result = await api.riskAssessment.create.mutate(data)
+        const result = await directusService.createItem<RiskAssessment>("risk_assessments", {
+          ...data,
+          created_at: new Date().toISOString(),
+        })
         return result
       } catch (error) {
         console.error("Failed to create risk assessment:", error)
@@ -455,7 +476,7 @@ export const hybridApi = {
         return mockApi.riskAssessment.update(id, data)
       }
       try {
-        const result = await api.riskAssessment.update.mutate({ id, data })
+        const result = await directusService.updateItem<RiskAssessment>("risk_assessments", id, data)
         return result
       } catch (error) {
         console.error("Failed to update risk assessment:", error)
@@ -467,8 +488,8 @@ export const hybridApi = {
         return mockApi.riskAssessment.delete(id)
       }
       try {
-        const result = await api.riskAssessment.delete.mutate({ id })
-        return result.success
+        await directusService.deleteItem("risk_assessments", id)
+        return true
       } catch (error) {
         console.error("Failed to delete risk assessment:", error)
         return mockApi.riskAssessment.delete(id)
@@ -483,7 +504,7 @@ export const hybridApi = {
         return mockApi.dueDiligenceStatement.list()
       }
       try {
-        const result = await api.dueDiligenceStatement.list.query()
+        const result = await directusService.getDueDiligenceStatements()
         return result
       } catch (error) {
         console.error("Failed to fetch due diligence statements:", error)
@@ -495,7 +516,7 @@ export const hybridApi = {
         return mockApi.dueDiligenceStatement.get(id)
       }
       try {
-        const result = await api.dueDiligenceStatement.get.query({ id })
+        const result = await directusService.getItem<DueDiligenceStatement>("due_diligence_statements", id)
         return result
       } catch (error) {
         console.error("Failed to fetch due diligence statement:", error)
@@ -507,7 +528,10 @@ export const hybridApi = {
         return mockApi.dueDiligenceStatement.create(data)
       }
       try {
-        const result = await api.dueDiligenceStatement.create.mutate(data)
+        const result = await directusService.createItem<DueDiligenceStatement>("due_diligence_statements", {
+          ...data,
+          created_at: new Date().toISOString(),
+        })
         return result
       } catch (error) {
         console.error("Failed to create due diligence statement:", error)
@@ -522,7 +546,7 @@ export const hybridApi = {
         return mockApi.dueDiligenceStatement.update(id, data)
       }
       try {
-        const result = await api.dueDiligenceStatement.update.mutate({ id, data })
+        const result = await directusService.updateItem<DueDiligenceStatement>("due_diligence_statements", id, data)
         return result
       } catch (error) {
         console.error("Failed to update due diligence statement:", error)
@@ -534,8 +558,8 @@ export const hybridApi = {
         return mockApi.dueDiligenceStatement.delete(id)
       }
       try {
-        const result = await api.dueDiligenceStatement.delete.mutate({ id })
-        return result.success
+        await directusService.deleteItem("due_diligence_statements", id)
+        return true
       } catch (error) {
         console.error("Failed to delete due diligence statement:", error)
         return mockApi.dueDiligenceStatement.delete(id)
@@ -546,7 +570,10 @@ export const hybridApi = {
         return mockApi.dueDiligenceStatement.submit(id)
       }
       try {
-        const result = await api.dueDiligenceStatement.submit.mutate({ id })
+        const result = await directusService.updateItem<DueDiligenceStatement>("due_diligence_statements", id, {
+          status: "submitted",
+          submission_date: new Date().toISOString().split("T")[0],
+        })
         return result
       } catch (error) {
         console.error("Failed to submit due diligence statement:", error)
@@ -562,8 +589,49 @@ export const hybridApi = {
         return mockApi.dashboard.stats()
       }
       try {
-        const result = await api.dashboard.stats.query()
-        return result
+        // Calculate stats from actual data
+        const [
+          organizations,
+          customers,
+          products,
+          suppliers,
+          rawMaterials,
+          origins,
+          riskAssessments,
+          dueDiligenceStatements,
+        ] = await Promise.all([
+          directusService.getOrganizations(),
+          directusService.getCustomers(),
+          directusService.getProducts(),
+          directusService.getSuppliers(),
+          directusService.getRawMaterials(),
+          directusService.getOrigins(),
+          directusService.getRiskAssessments(),
+          directusService.getDueDiligenceStatements(),
+        ])
+
+        return {
+          totalOrganizations: organizations.length,
+          totalCustomers: customers.length,
+          totalProducts: products.length,
+          totalSuppliers: suppliers.length,
+          highRiskAssessments: riskAssessments.filter((r) => r.deforestation_risk === "high").length,
+          pendingStatements: dueDiligenceStatements.filter((s) => s.status === "draft").length,
+          complianceRate: Math.round(
+            (dueDiligenceStatements.filter((s) => s.status === "approved").length /
+              Math.max(dueDiligenceStatements.length, 1)) *
+              100,
+          ),
+          averageRiskScore:
+            riskAssessments.length > 0
+              ? Math.round(
+                  riskAssessments.reduce(
+                    (acc, r) => acc + (r.deforestation_risk === "high" ? 3 : r.deforestation_risk === "medium" ? 2 : 1),
+                    0,
+                  ) / riskAssessments.length,
+                )
+              : 0,
+        }
       } catch (error) {
         console.error("Failed to fetch dashboard stats:", error)
         return mockApi.dashboard.stats()
@@ -574,8 +642,36 @@ export const hybridApi = {
         return mockApi.dashboard.recentActivity()
       }
       try {
-        const result = await api.dashboard.recentActivity.query()
-        return result
+        // Get recent items from various collections
+        const [organizations, products, riskAssessments] = await Promise.all([
+          directusService.getOrganizations({ limit: 5, sort: ["-created_at"] }),
+          directusService.getProducts({ limit: 5, sort: ["-created_at"] }),
+          directusService.getRiskAssessments({ limit: 5, sort: ["-created_at"] }),
+        ])
+
+        const activities = [
+          ...organizations.map((org) => ({
+            id: `org-${org.id}`,
+            title: "New organization registered",
+            description: org.name,
+            timestamp: org.created_at || new Date().toISOString(),
+          })),
+          ...products.map((product) => ({
+            id: `product-${product.id}`,
+            title: "Product added",
+            description: product.name,
+            timestamp: product.created_at || new Date().toISOString(),
+          })),
+          ...riskAssessments.map((assessment) => ({
+            id: `risk-${assessment.id}`,
+            title: "Risk assessment completed",
+            description: assessment.assessment_name,
+            timestamp: assessment.created_at || new Date().toISOString(),
+          })),
+        ]
+
+        // Sort by timestamp and return latest 10
+        return activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10)
       } catch (error) {
         console.error("Failed to fetch recent activity:", error)
         return mockApi.dashboard.recentActivity()
