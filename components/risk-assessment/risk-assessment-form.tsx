@@ -1,247 +1,277 @@
 "use client"
-
-import type React from "react"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import { DialogFooter } from "@/components/ui/dialog"
-import type { CreateRiskAssessmentData } from "@/types"
+import { riskAssessmentSchema, type RiskAssessmentFormData } from "@/lib/validations/forms"
 
 interface RiskAssessmentFormProps {
-  formData: CreateRiskAssessmentData
-  setFormData: (data: CreateRiskAssessmentData) => void
-  onSubmit: (e: React.FormEvent) => void
-  isEditing: boolean
+  initialData?: Partial<RiskAssessmentFormData>
+  onSubmit: (data: RiskAssessmentFormData) => Promise<void>
+  onClose: () => void
+  isEditing?: boolean
+  isLoading?: boolean
 }
 
-export function RiskAssessmentForm({ formData, setFormData, onSubmit, isEditing }: RiskAssessmentFormProps) {
+export function RiskAssessmentForm({
+  initialData,
+  onSubmit,
+  onClose,
+  isEditing = false,
+  isLoading = false,
+}: RiskAssessmentFormProps) {
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm<RiskAssessmentFormData>({
+    resolver: zodResolver(riskAssessmentSchema),
+    defaultValues: {
+      assessment_name: initialData?.assessment_name || "",
+      assessment_date: initialData?.assessment_date || "",
+      risk_category: initialData?.risk_category || "deforestation",
+      risk_level: initialData?.risk_level || "low",
+      overall_risk_score: initialData?.overall_risk_score || 1,
+      assessor_name: initialData?.assessor_name || "",
+      findings: initialData?.findings || "",
+      mitigation_measures: initialData?.mitigation_measures || "",
+      status: initialData?.status || "pending",
+      follow_up_date: initialData?.follow_up_date || "",
+    },
+  })
+
+  const handleFormSubmit = async (data: RiskAssessmentFormData) => {
+    try {
+      await onSubmit(data)
+      onClose()
+    } catch (error) {
+      console.error("Form submission error:", error)
+    }
+  }
+
   return (
-    <form onSubmit={onSubmit}>
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
       <div className="grid gap-4 py-4 max-h-96 overflow-y-auto">
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="assessment_name" className="text-right">
             Assessment Name
           </Label>
-          <Input
-            id="assessment_name"
-            value={formData.assessment_name}
-            onChange={(e) => setFormData({ ...formData, assessment_name: e.target.value })}
-            className="col-span-3"
-            required
-          />
+          <div className="col-span-3">
+            <Input
+              id="assessment_name"
+              {...register("assessment_name")}
+              className="border-green-200 focus:border-green-500 focus:ring-green-500"
+              placeholder="Enter assessment name"
+            />
+            {errors.assessment_name && <p className="text-sm text-red-500 mt-1">{errors.assessment_name.message}</p>}
+          </div>
         </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="assessor_name" className="text-right">
-            Assessor Name
-          </Label>
-          <Input
-            id="assessor_name"
-            value={formData.assessor_name}
-            onChange={(e) => setFormData({ ...formData, assessor_name: e.target.value })}
-            className="col-span-3"
-            required
-          />
-        </div>
+
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="assessment_date" className="text-right">
             Assessment Date
           </Label>
-          <Input
-            id="assessment_date"
-            type="date"
-            value={formData.assessment_date}
-            onChange={(e) => setFormData({ ...formData, assessment_date: e.target.value })}
-            className="col-span-3"
-            required
-          />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="product_id" className="text-right">
-            Product ID
-          </Label>
-          <Input
-            id="product_id"
-            value={formData.product_id}
-            onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
-            className="col-span-3"
-            placeholder="Product identifier"
-            required
-          />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="supplier_id" className="text-right">
-            Supplier ID
-          </Label>
-          <Input
-            id="supplier_id"
-            value={formData.supplier_id}
-            onChange={(e) => setFormData({ ...formData, supplier_id: e.target.value })}
-            className="col-span-3"
-            placeholder="Supplier identifier"
-            required
-          />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="origin_id" className="text-right">
-            Origin ID
-          </Label>
-          <Input
-            id="origin_id"
-            value={formData.origin_id}
-            onChange={(e) => setFormData({ ...formData, origin_id: e.target.value })}
-            className="col-span-3"
-            placeholder="Origin identifier"
-            required
-          />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="overall_risk_score" className="text-right">
-            Risk Score (0-100)
-          </Label>
-          <Input
-            id="overall_risk_score"
-            type="number"
-            min="0"
-            max="100"
-            value={formData.overall_risk_score}
-            onChange={(e) => setFormData({ ...formData, overall_risk_score: Number.parseFloat(e.target.value) })}
-            className="col-span-3"
-            required
-          />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="deforestation_risk" className="text-right">
-            Deforestation Risk
-          </Label>
-          <Select
-            value={formData.deforestation_risk}
-            onValueChange={(value: "low" | "medium" | "high") =>
-              setFormData({ ...formData, deforestation_risk: value })
-            }
-          >
-            <SelectTrigger className="col-span-3">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="low">Low Risk</SelectItem>
-              <SelectItem value="medium">Medium Risk</SelectItem>
-              <SelectItem value="high">High Risk</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="legal_compliance" className="text-right">
-            Legal Compliance
-          </Label>
-          <Select
-            value={formData.legal_compliance}
-            onValueChange={(value: "compliant" | "non_compliant" | "under_review") =>
-              setFormData({ ...formData, legal_compliance: value })
-            }
-          >
-            <SelectTrigger className="col-span-3">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="compliant">Compliant</SelectItem>
-              <SelectItem value="non_compliant">Non-Compliant</SelectItem>
-              <SelectItem value="under_review">Under Review</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="environmental_impact" className="text-right">
-            Environmental Impact (0-10)
-          </Label>
-          <Input
-            id="environmental_impact"
-            type="number"
-            min="0"
-            max="10"
-            value={formData.environmental_impact}
-            onChange={(e) => setFormData({ ...formData, environmental_impact: Number.parseFloat(e.target.value) })}
-            className="col-span-3"
-            required
-          />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="social_impact" className="text-right">
-            Social Impact (0-10)
-          </Label>
-          <Input
-            id="social_impact"
-            type="number"
-            min="0"
-            max="10"
-            value={formData.social_impact}
-            onChange={(e) => setFormData({ ...formData, social_impact: Number.parseFloat(e.target.value) })}
-            className="col-span-3"
-            required
-          />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="status" className="text-right">
-            Status
-          </Label>
-          <Select
-            value={formData.status}
-            onValueChange={(value: "draft" | "completed" | "approved" | "rejected") =>
-              setFormData({ ...formData, status: value })
-            }
-          >
-            <SelectTrigger className="col-span-3">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="next_review_date" className="text-right">
-            Next Review Date
-          </Label>
-          <Input
-            id="next_review_date"
-            type="date"
-            value={formData.next_review_date}
-            onChange={(e) => setFormData({ ...formData, next_review_date: e.target.value })}
-            className="col-span-3"
-          />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label className="text-right">Follow-up Required</Label>
-          <div className="col-span-3 flex items-center space-x-2">
-            <Checkbox
-              id="follow_up_required"
-              checked={formData.follow_up_required}
-              onCheckedChange={(checked) => setFormData({ ...formData, follow_up_required: !!checked })}
+          <div className="col-span-3">
+            <Input
+              id="assessment_date"
+              type="date"
+              {...register("assessment_date")}
+              className="border-green-200 focus:border-green-500 focus:ring-green-500"
             />
-            <Label htmlFor="follow_up_required">Follow-up action required</Label>
+            {errors.assessment_date && <p className="text-sm text-red-500 mt-1">{errors.assessment_date.message}</p>}
           </div>
         </div>
+
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="risk_category" className="text-right">
+            Risk Category
+          </Label>
+          <div className="col-span-3">
+            <Controller
+              name="risk_category"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="border-green-200 focus:border-green-500">
+                    <SelectValue placeholder="Select risk category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="deforestation">Deforestation</SelectItem>
+                    <SelectItem value="human_rights">Human Rights</SelectItem>
+                    <SelectItem value="environmental">Environmental</SelectItem>
+                    <SelectItem value="supply_chain">Supply Chain</SelectItem>
+                    <SelectItem value="compliance">Compliance</SelectItem>
+                    <SelectItem value="operational">Operational</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.risk_category && <p className="text-sm text-red-500 mt-1">{errors.risk_category.message}</p>}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="risk_level" className="text-right">
+            Risk Level
+          </Label>
+          <div className="col-span-3">
+            <Controller
+              name="risk_level"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="border-green-200 focus:border-green-500">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low Risk</SelectItem>
+                    <SelectItem value="medium">Medium Risk</SelectItem>
+                    <SelectItem value="high">High Risk</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.risk_level && <p className="text-sm text-red-500 mt-1">{errors.risk_level.message}</p>}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="overall_risk_score" className="text-right">
+            Risk Score (1-100)
+          </Label>
+          <div className="col-span-3">
+            <Input
+              id="overall_risk_score"
+              type="number"
+              min="1"
+              max="100"
+              {...register("overall_risk_score", { valueAsNumber: true })}
+              className="border-green-200 focus:border-green-500 focus:ring-green-500"
+              placeholder="Enter risk score"
+            />
+            {errors.overall_risk_score && (
+              <p className="text-sm text-red-500 mt-1">{errors.overall_risk_score.message}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="assessor_name" className="text-right">
+            Assessor Name
+          </Label>
+          <div className="col-span-3">
+            <Input
+              id="assessor_name"
+              {...register("assessor_name")}
+              className="border-green-200 focus:border-green-500 focus:ring-green-500"
+              placeholder="Enter assessor name"
+            />
+            {errors.assessor_name && <p className="text-sm text-red-500 mt-1">{errors.assessor_name.message}</p>}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="findings" className="text-right">
+            Findings
+          </Label>
+          <div className="col-span-3">
+            <Textarea
+              id="findings"
+              {...register("findings")}
+              className="border-green-200 focus:border-green-500 focus:ring-green-500"
+              placeholder="Assessment findings and observations..."
+              rows={3}
+            />
+            {errors.findings && <p className="text-sm text-red-500 mt-1">{errors.findings.message}</p>}
+          </div>
+        </div>
+
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="mitigation_measures" className="text-right">
             Mitigation Measures
           </Label>
-          <Textarea
-            id="mitigation_measures"
-            value={formData.mitigation_measures}
-            onChange={(e) => setFormData({ ...formData, mitigation_measures: e.target.value })}
-            className="col-span-3"
-            placeholder="Describe mitigation measures..."
-          />
+          <div className="col-span-3">
+            <Textarea
+              id="mitigation_measures"
+              {...register("mitigation_measures")}
+              className="border-green-200 focus:border-green-500 focus:ring-green-500"
+              placeholder="Recommended mitigation measures..."
+              rows={3}
+            />
+            {errors.mitigation_measures && (
+              <p className="text-sm text-red-500 mt-1">{errors.mitigation_measures.message}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="status" className="text-right">
+            Status
+          </Label>
+          <div className="col-span-3">
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="border-green-200 focus:border-green-500">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="requires_action">Requires Action</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.status && <p className="text-sm text-red-500 mt-1">{errors.status.message}</p>}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="follow_up_date" className="text-right">
+            Follow-up Date
+          </Label>
+          <div className="col-span-3">
+            <Input
+              id="follow_up_date"
+              type="date"
+              {...register("follow_up_date")}
+              className="border-green-200 focus:border-green-500 focus:ring-green-500"
+            />
+            {errors.follow_up_date && <p className="text-sm text-red-500 mt-1">{errors.follow_up_date.message}</p>}
+          </div>
         </div>
       </div>
+
       <DialogFooter>
-        <Button type="submit">{isEditing ? "Update" : "Create"}</Button>
+        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting || isLoading}>
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          className="bg-green-600 hover:bg-green-700 text-white"
+          disabled={isSubmitting || isLoading}
+        >
+          {isSubmitting || isLoading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+              {isEditing ? "Updating..." : "Creating..."}
+            </>
+          ) : isEditing ? (
+            "Update Assessment"
+          ) : (
+            "Create Assessment"
+          )}
+        </Button>
       </DialogFooter>
     </form>
   )

@@ -12,7 +12,6 @@ interface RiskAssessmentTableProps {
   onDelete: (id: string) => void
   getRiskBadgeColor: (risk: string) => string
   getStatusBadge: (status: string) => { className: string; text: string }
-  getComplianceBadge: (compliance: string) => { className: string; text: string }
 }
 
 export function RiskAssessmentTable({
@@ -21,18 +20,17 @@ export function RiskAssessmentTable({
   onDelete,
   getRiskBadgeColor,
   getStatusBadge,
-  getComplianceBadge,
 }: RiskAssessmentTableProps) {
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Assessment Name</TableHead>
-          <TableHead>Assessor</TableHead>
           <TableHead>Date</TableHead>
-          <TableHead>Risk Score</TableHead>
-          <TableHead>Deforestation Risk</TableHead>
-          <TableHead>Legal Compliance</TableHead>
+          <TableHead>Category</TableHead>
+          <TableHead>Risk Level</TableHead>
+          <TableHead>Score</TableHead>
+          <TableHead>Assessor</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
@@ -40,26 +38,22 @@ export function RiskAssessmentTable({
       <TableBody>
         {assessments.map((assessment) => {
           const statusBadge = getStatusBadge(assessment.status)
-          const complianceBadge = getComplianceBadge(assessment.legal_compliance)
           return (
             <TableRow key={assessment.id}>
               <TableCell className="font-medium">{assessment.assessment_name}</TableCell>
-              <TableCell>{assessment.assessor_name}</TableCell>
               <TableCell>{assessment.assessment_date}</TableCell>
               <TableCell>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{assessment.overall_risk_score}</span>
-                  <span className="text-sm text-muted-foreground">/100</span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge className={getRiskBadgeColor(assessment.deforestation_risk)}>
-                  {assessment.deforestation_risk}
+                <Badge className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 capitalize">
+                  {assessment.risk_category.replace("_", " ")}
                 </Badge>
               </TableCell>
               <TableCell>
-                <Badge className={complianceBadge.className}>{complianceBadge.text}</Badge>
+                <Badge className={getRiskBadgeColor(assessment.risk_level)}>{assessment.risk_level}</Badge>
               </TableCell>
+              <TableCell>
+                <span className="font-medium">{assessment.overall_risk_score}/100</span>
+              </TableCell>
+              <TableCell>{assessment.assessor_name}</TableCell>
               <TableCell>
                 <Badge className={statusBadge.className}>{statusBadge.text}</Badge>
               </TableCell>

@@ -145,7 +145,7 @@ export function OrganizationsPage() {
       </Card>
 
       {/* Organization Form Modal */}
-      {showForm && <OrganizationForm onClose={() => setShowForm(false)} />}
+      {showForm && <OrganizationForm onSubmit={() => setShowForm(false)} />}
     </div>
   )
 }

@@ -145,7 +145,7 @@ export function CustomersPage() {
       </Card>
 
       {/* Customer Form Modal */}
-      {showForm && <CustomerForm onClose={() => setShowForm(false)} />}
+      {showForm && <CustomerForm onSubmit={() => setShowForm(false)} />}
     </div>
   )
 }

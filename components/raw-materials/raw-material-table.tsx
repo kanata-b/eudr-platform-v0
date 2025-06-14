@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Trash2 } from "lucide-react"
+import { Edit, Trash2, Check, X } from "lucide-react"
 import type { RawMaterial } from "@/types"
 
 interface RawMaterialTableProps {
@@ -20,11 +20,11 @@ export function RawMaterialTable({ rawMaterials, onEdit, onDelete, getRiskBadgeC
         <TableRow>
           <TableHead>Name</TableHead>
           <TableHead>Type</TableHead>
-          <TableHead>Origin Location</TableHead>
-          <TableHead>Volume</TableHead>
-          <TableHead>Harvest Date</TableHead>
+          <TableHead>Quantity</TableHead>
+          <TableHead>Origin</TableHead>
           <TableHead>Risk Level</TableHead>
-          <TableHead>Certificate</TableHead>
+          <TableHead>Certified</TableHead>
+          <TableHead>Harvest Date</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -32,16 +32,26 @@ export function RawMaterialTable({ rawMaterials, onEdit, onDelete, getRiskBadgeC
         {rawMaterials.map((material) => (
           <TableRow key={material.id}>
             <TableCell className="font-medium">{material.name}</TableCell>
-            <TableCell>{material.type}</TableCell>
-            <TableCell>{material.origin_location}</TableCell>
             <TableCell>
-              {material.volume} {material.unit}
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 capitalize">
+                {material.type}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              {material.quantity} {material.unit}
+            </TableCell>
+            <TableCell>{material.origin_country}</TableCell>
+            <TableCell>
+              <Badge className={getRiskBadgeColor(material.risk_level)}>{material.risk_level}</Badge>
+            </TableCell>
+            <TableCell>
+              {material.sustainability_certificate ? (
+                <Check className="h-4 w-4 text-green-600" />
+              ) : (
+                <X className="h-4 w-4 text-gray-400" />
+              )}
             </TableCell>
             <TableCell>{material.harvest_date}</TableCell>
-            <TableCell>
-              <Badge className={getRiskBadgeColor(material.risk_assessment)}>{material.risk_assessment}</Badge>
-            </TableCell>
-            <TableCell>{material.sustainability_certificate || "N/A"}</TableCell>
             <TableCell>
               <div className="flex space-x-2">
                 <Button variant="outline" size="sm" onClick={() => onEdit(material)}>
