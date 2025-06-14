@@ -1,4 +1,7 @@
-import { createTRPCReact } from "@trpc/react-query"
-import type { AppRouter } from "@/lib/server/trpc"
+// This file is no longer needed since we're using Directus SDK directly
+// Keeping it for backward compatibility but it's not used anymore
 
-export const trpc = createTRPCReact<AppRouter>()
+export const trpc = null
+export const api = null
+
+// All API calls now go through hybridApi which uses Directus SDK directly
