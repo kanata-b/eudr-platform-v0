@@ -25,8 +25,8 @@ import type {
 const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL || "https://kong-gateway-production.up.railway.app/dmc"
 
 const directus = createDirectus<DirectusSchema>(directusUrl)
-  .with(authentication("cookie", { credentials: "include" }))
-  .with(rest({ credentials: "include" }))
+  .with(authentication("cookie", { credentials: "omit" }))
+  .with(rest({ credentials: "omit" }))
 
 export class DirectusService {
   private client = directus
