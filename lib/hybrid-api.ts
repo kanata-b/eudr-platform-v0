@@ -1,5 +1,5 @@
 import { mockApi } from "@/lib/mock-api"
-import { trpc } from "@/lib/trpc-client"
+import { api } from "@/lib/trpc-client"
 import type {
   Organization,
   Customer,
@@ -26,8 +26,6 @@ function isOfflineMode(): boolean {
 }
 
 // Hybrid API that switches between mock and real API based on offline mode
-const utils = trpc.useUtils() // Moved hook call to the top level
-
 export const hybridApi = {
   // Organizations
   organization: {
@@ -35,33 +33,62 @@ export const hybridApi = {
       if (isOfflineMode()) {
         return mockApi.organization.list()
       }
-      // Use tRPC utils for online mode
-      return await utils.organization.list.fetch()
+      try {
+        const result = await api.organization.list.query()
+        return result
+      } catch (error) {
+        console.error("Failed to fetch organizations:", error)
+        // Fallback to mock data on error
+        return mockApi.organization.list()
+      }
     },
     get: async (id: string): Promise<Organization | null> => {
       if (isOfflineMode()) {
         return mockApi.organization.get(id)
       }
-      return await utils.organization.get.fetch({ id })
+      try {
+        const result = await api.organization.get.query({ id })
+        return result
+      } catch (error) {
+        console.error("Failed to fetch organization:", error)
+        return mockApi.organization.get(id)
+      }
     },
     create: async (data: CreateOrganizationData): Promise<Organization> => {
       if (isOfflineMode()) {
         return mockApi.organization.create(data)
       }
-      return await utils.organization.create.mutate(data)
+      try {
+        const result = await api.organization.create.mutate(data)
+        return result
+      } catch (error) {
+        console.error("Failed to create organization:", error)
+        return mockApi.organization.create(data)
+      }
     },
     update: async (id: string, data: Partial<CreateOrganizationData>): Promise<Organization | null> => {
       if (isOfflineMode()) {
         return mockApi.organization.update(id, data)
       }
-      return await utils.organization.update.mutate({ id, data })
+      try {
+        const result = await api.organization.update.mutate({ id, data })
+        return result
+      } catch (error) {
+        console.error("Failed to update organization:", error)
+        return mockApi.organization.update(id, data)
+      }
     },
     delete: async (id: string): Promise<boolean> => {
       if (isOfflineMode()) {
         return mockApi.organization.delete(id)
       }
-      const result = await utils.organization.delete.mutate({ id })
-      return result.success
+      try {
+        const result = await api.organization.delete.mutate({ id })
+        return result.success
+      } catch (error) {
+        console.error("Failed to delete organization:", error)
+        return mockApi.organization.delete(id)
+      }
     },
   },
 
@@ -71,32 +98,61 @@ export const hybridApi = {
       if (isOfflineMode()) {
         return mockApi.customer.list()
       }
-      return await utils.customer.list.fetch()
+      try {
+        const result = await api.customer.list.query()
+        return result
+      } catch (error) {
+        console.error("Failed to fetch customers:", error)
+        return mockApi.customer.list()
+      }
     },
     get: async (id: string): Promise<Customer | null> => {
       if (isOfflineMode()) {
         return mockApi.customer.get(id)
       }
-      return await utils.customer.get.fetch({ id })
+      try {
+        const result = await api.customer.get.query({ id })
+        return result
+      } catch (error) {
+        console.error("Failed to fetch customer:", error)
+        return mockApi.customer.get(id)
+      }
     },
     create: async (data: CreateCustomerData): Promise<Customer> => {
       if (isOfflineMode()) {
         return mockApi.customer.create(data)
       }
-      return await utils.customer.create.mutate(data)
+      try {
+        const result = await api.customer.create.mutate(data)
+        return result
+      } catch (error) {
+        console.error("Failed to create customer:", error)
+        return mockApi.customer.create(data)
+      }
     },
     update: async (id: string, data: Partial<CreateCustomerData>): Promise<Customer | null> => {
       if (isOfflineMode()) {
         return mockApi.customer.update(id, data)
       }
-      return await utils.customer.update.mutate({ id, data })
+      try {
+        const result = await api.customer.update.mutate({ id, data })
+        return result
+      } catch (error) {
+        console.error("Failed to update customer:", error)
+        return mockApi.customer.update(id, data)
+      }
     },
     delete: async (id: string): Promise<boolean> => {
       if (isOfflineMode()) {
         return mockApi.customer.delete(id)
       }
-      const result = await utils.customer.delete.mutate({ id })
-      return result.success
+      try {
+        const result = await api.customer.delete.mutate({ id })
+        return result.success
+      } catch (error) {
+        console.error("Failed to delete customer:", error)
+        return mockApi.customer.delete(id)
+      }
     },
   },
 
@@ -106,32 +162,61 @@ export const hybridApi = {
       if (isOfflineMode()) {
         return mockApi.product.list()
       }
-      return await utils.product.list.fetch()
+      try {
+        const result = await api.product.list.query()
+        return result
+      } catch (error) {
+        console.error("Failed to fetch products:", error)
+        return mockApi.product.list()
+      }
     },
     get: async (id: string): Promise<Product | null> => {
       if (isOfflineMode()) {
         return mockApi.product.get(id)
       }
-      return await utils.product.get.fetch({ id })
+      try {
+        const result = await api.product.get.query({ id })
+        return result
+      } catch (error) {
+        console.error("Failed to fetch product:", error)
+        return mockApi.product.get(id)
+      }
     },
     create: async (data: CreateProductData): Promise<Product> => {
       if (isOfflineMode()) {
         return mockApi.product.create(data)
       }
-      return await utils.product.create.mutate(data)
+      try {
+        const result = await api.product.create.mutate(data)
+        return result
+      } catch (error) {
+        console.error("Failed to create product:", error)
+        return mockApi.product.create(data)
+      }
     },
     update: async (id: string, data: Partial<CreateProductData>): Promise<Product | null> => {
       if (isOfflineMode()) {
         return mockApi.product.update(id, data)
       }
-      return await utils.product.update.mutate({ id, data })
+      try {
+        const result = await api.product.update.mutate({ id, data })
+        return result
+      } catch (error) {
+        console.error("Failed to update product:", error)
+        return mockApi.product.update(id, data)
+      }
     },
     delete: async (id: string): Promise<boolean> => {
       if (isOfflineMode()) {
         return mockApi.product.delete(id)
       }
-      const result = await utils.product.delete.mutate({ id })
-      return result.success
+      try {
+        const result = await api.product.delete.mutate({ id })
+        return result.success
+      } catch (error) {
+        console.error("Failed to delete product:", error)
+        return mockApi.product.delete(id)
+      }
     },
   },
 
@@ -141,32 +226,61 @@ export const hybridApi = {
       if (isOfflineMode()) {
         return mockApi.supplier.list()
       }
-      return await utils.supplier.list.fetch()
+      try {
+        const result = await api.supplier.list.query()
+        return result
+      } catch (error) {
+        console.error("Failed to fetch suppliers:", error)
+        return mockApi.supplier.list()
+      }
     },
     get: async (id: string): Promise<Supplier | null> => {
       if (isOfflineMode()) {
         return mockApi.supplier.get(id)
       }
-      return await utils.supplier.get.fetch({ id })
+      try {
+        const result = await api.supplier.get.query({ id })
+        return result
+      } catch (error) {
+        console.error("Failed to fetch supplier:", error)
+        return mockApi.supplier.get(id)
+      }
     },
     create: async (data: CreateSupplierData): Promise<Supplier> => {
       if (isOfflineMode()) {
         return mockApi.supplier.create(data)
       }
-      return await utils.supplier.create.mutate(data)
+      try {
+        const result = await api.supplier.create.mutate(data)
+        return result
+      } catch (error) {
+        console.error("Failed to create supplier:", error)
+        return mockApi.supplier.create(data)
+      }
     },
     update: async (id: string, data: Partial<CreateSupplierData>): Promise<Supplier | null> => {
       if (isOfflineMode()) {
         return mockApi.supplier.update(id, data)
       }
-      return await utils.supplier.update.mutate({ id, data })
+      try {
+        const result = await api.supplier.update.mutate({ id, data })
+        return result
+      } catch (error) {
+        console.error("Failed to update supplier:", error)
+        return mockApi.supplier.update(id, data)
+      }
     },
     delete: async (id: string): Promise<boolean> => {
       if (isOfflineMode()) {
         return mockApi.supplier.delete(id)
       }
-      const result = await utils.supplier.delete.mutate({ id })
-      return result.success
+      try {
+        const result = await api.supplier.delete.mutate({ id })
+        return result.success
+      } catch (error) {
+        console.error("Failed to delete supplier:", error)
+        return mockApi.supplier.delete(id)
+      }
     },
   },
 
@@ -176,32 +290,61 @@ export const hybridApi = {
       if (isOfflineMode()) {
         return mockApi.rawMaterial.list()
       }
-      return await utils.rawMaterial.list.fetch()
+      try {
+        const result = await api.rawMaterial.list.query()
+        return result
+      } catch (error) {
+        console.error("Failed to fetch raw materials:", error)
+        return mockApi.rawMaterial.list()
+      }
     },
     get: async (id: string): Promise<RawMaterial | null> => {
       if (isOfflineMode()) {
         return mockApi.rawMaterial.get(id)
       }
-      return await utils.rawMaterial.get.fetch({ id })
+      try {
+        const result = await api.rawMaterial.get.query({ id })
+        return result
+      } catch (error) {
+        console.error("Failed to fetch raw material:", error)
+        return mockApi.rawMaterial.get(id)
+      }
     },
     create: async (data: CreateRawMaterialData): Promise<RawMaterial> => {
       if (isOfflineMode()) {
         return mockApi.rawMaterial.create(data)
       }
-      return await utils.rawMaterial.create.mutate(data)
+      try {
+        const result = await api.rawMaterial.create.mutate(data)
+        return result
+      } catch (error) {
+        console.error("Failed to create raw material:", error)
+        return mockApi.rawMaterial.create(data)
+      }
     },
     update: async (id: string, data: Partial<CreateRawMaterialData>): Promise<RawMaterial | null> => {
       if (isOfflineMode()) {
         return mockApi.rawMaterial.update(id, data)
       }
-      return await utils.rawMaterial.update.mutate({ id, data })
+      try {
+        const result = await api.rawMaterial.update.mutate({ id, data })
+        return result
+      } catch (error) {
+        console.error("Failed to update raw material:", error)
+        return mockApi.rawMaterial.update(id, data)
+      }
     },
     delete: async (id: string): Promise<boolean> => {
       if (isOfflineMode()) {
         return mockApi.rawMaterial.delete(id)
       }
-      const result = await utils.rawMaterial.delete.mutate({ id })
-      return result.success
+      try {
+        const result = await api.rawMaterial.delete.mutate({ id })
+        return result.success
+      } catch (error) {
+        console.error("Failed to delete raw material:", error)
+        return mockApi.rawMaterial.delete(id)
+      }
     },
   },
 
@@ -211,32 +354,61 @@ export const hybridApi = {
       if (isOfflineMode()) {
         return mockApi.origin.list()
       }
-      return await utils.origin.list.fetch()
+      try {
+        const result = await api.origin.list.query()
+        return result
+      } catch (error) {
+        console.error("Failed to fetch origins:", error)
+        return mockApi.origin.list()
+      }
     },
     get: async (id: string): Promise<Origin | null> => {
       if (isOfflineMode()) {
         return mockApi.origin.get(id)
       }
-      return await utils.origin.get.fetch({ id })
+      try {
+        const result = await api.origin.get.query({ id })
+        return result
+      } catch (error) {
+        console.error("Failed to fetch origin:", error)
+        return mockApi.origin.get(id)
+      }
     },
     create: async (data: CreateOriginData): Promise<Origin> => {
       if (isOfflineMode()) {
         return mockApi.origin.create(data)
       }
-      return await utils.origin.create.mutate(data)
+      try {
+        const result = await api.origin.create.mutate(data)
+        return result
+      } catch (error) {
+        console.error("Failed to create origin:", error)
+        return mockApi.origin.create(data)
+      }
     },
     update: async (id: string, data: Partial<CreateOriginData>): Promise<Origin | null> => {
       if (isOfflineMode()) {
         return mockApi.origin.update(id, data)
       }
-      return await utils.origin.update.mutate({ id, data })
+      try {
+        const result = await api.origin.update.mutate({ id, data })
+        return result
+      } catch (error) {
+        console.error("Failed to update origin:", error)
+        return mockApi.origin.update(id, data)
+      }
     },
     delete: async (id: string): Promise<boolean> => {
       if (isOfflineMode()) {
         return mockApi.origin.delete(id)
       }
-      const result = await utils.origin.delete.mutate({ id })
-      return result.success
+      try {
+        const result = await api.origin.delete.mutate({ id })
+        return result.success
+      } catch (error) {
+        console.error("Failed to delete origin:", error)
+        return mockApi.origin.delete(id)
+      }
     },
   },
 
@@ -246,32 +418,61 @@ export const hybridApi = {
       if (isOfflineMode()) {
         return mockApi.riskAssessment.list()
       }
-      return await utils.riskAssessment.list.fetch()
+      try {
+        const result = await api.riskAssessment.list.query()
+        return result
+      } catch (error) {
+        console.error("Failed to fetch risk assessments:", error)
+        return mockApi.riskAssessment.list()
+      }
     },
     get: async (id: string): Promise<RiskAssessment | null> => {
       if (isOfflineMode()) {
         return mockApi.riskAssessment.get(id)
       }
-      return await utils.riskAssessment.get.fetch({ id })
+      try {
+        const result = await api.riskAssessment.get.query({ id })
+        return result
+      } catch (error) {
+        console.error("Failed to fetch risk assessment:", error)
+        return mockApi.riskAssessment.get(id)
+      }
     },
     create: async (data: CreateRiskAssessmentData): Promise<RiskAssessment> => {
       if (isOfflineMode()) {
         return mockApi.riskAssessment.create(data)
       }
-      return await utils.riskAssessment.create.mutate(data)
+      try {
+        const result = await api.riskAssessment.create.mutate(data)
+        return result
+      } catch (error) {
+        console.error("Failed to create risk assessment:", error)
+        return mockApi.riskAssessment.create(data)
+      }
     },
     update: async (id: string, data: Partial<CreateRiskAssessmentData>): Promise<RiskAssessment | null> => {
       if (isOfflineMode()) {
         return mockApi.riskAssessment.update(id, data)
       }
-      return await utils.riskAssessment.update.mutate({ id, data })
+      try {
+        const result = await api.riskAssessment.update.mutate({ id, data })
+        return result
+      } catch (error) {
+        console.error("Failed to update risk assessment:", error)
+        return mockApi.riskAssessment.update(id, data)
+      }
     },
     delete: async (id: string): Promise<boolean> => {
       if (isOfflineMode()) {
         return mockApi.riskAssessment.delete(id)
       }
-      const result = await utils.riskAssessment.delete.mutate({ id })
-      return result.success
+      try {
+        const result = await api.riskAssessment.delete.mutate({ id })
+        return result.success
+      } catch (error) {
+        console.error("Failed to delete risk assessment:", error)
+        return mockApi.riskAssessment.delete(id)
+      }
     },
   },
 
@@ -281,19 +482,37 @@ export const hybridApi = {
       if (isOfflineMode()) {
         return mockApi.dueDiligenceStatement.list()
       }
-      return await utils.dueDiligenceStatement.list.fetch()
+      try {
+        const result = await api.dueDiligenceStatement.list.query()
+        return result
+      } catch (error) {
+        console.error("Failed to fetch due diligence statements:", error)
+        return mockApi.dueDiligenceStatement.list()
+      }
     },
     get: async (id: string): Promise<DueDiligenceStatement | null> => {
       if (isOfflineMode()) {
         return mockApi.dueDiligenceStatement.get(id)
       }
-      return await utils.dueDiligenceStatement.get.fetch({ id })
+      try {
+        const result = await api.dueDiligenceStatement.get.query({ id })
+        return result
+      } catch (error) {
+        console.error("Failed to fetch due diligence statement:", error)
+        return mockApi.dueDiligenceStatement.get(id)
+      }
     },
     create: async (data: CreateDueDiligenceStatementData): Promise<DueDiligenceStatement> => {
       if (isOfflineMode()) {
         return mockApi.dueDiligenceStatement.create(data)
       }
-      return await utils.dueDiligenceStatement.create.mutate(data)
+      try {
+        const result = await api.dueDiligenceStatement.create.mutate(data)
+        return result
+      } catch (error) {
+        console.error("Failed to create due diligence statement:", error)
+        return mockApi.dueDiligenceStatement.create(data)
+      }
     },
     update: async (
       id: string,
@@ -302,20 +521,37 @@ export const hybridApi = {
       if (isOfflineMode()) {
         return mockApi.dueDiligenceStatement.update(id, data)
       }
-      return await utils.dueDiligenceStatement.update.mutate({ id, data })
+      try {
+        const result = await api.dueDiligenceStatement.update.mutate({ id, data })
+        return result
+      } catch (error) {
+        console.error("Failed to update due diligence statement:", error)
+        return mockApi.dueDiligenceStatement.update(id, data)
+      }
     },
     delete: async (id: string): Promise<boolean> => {
       if (isOfflineMode()) {
         return mockApi.dueDiligenceStatement.delete(id)
       }
-      const result = await utils.dueDiligenceStatement.delete.mutate({ id })
-      return result.success
+      try {
+        const result = await api.dueDiligenceStatement.delete.mutate({ id })
+        return result.success
+      } catch (error) {
+        console.error("Failed to delete due diligence statement:", error)
+        return mockApi.dueDiligenceStatement.delete(id)
+      }
     },
     submit: async (id: string): Promise<DueDiligenceStatement | null> => {
       if (isOfflineMode()) {
         return mockApi.dueDiligenceStatement.submit(id)
       }
-      return await utils.dueDiligenceStatement.submit.mutate({ id })
+      try {
+        const result = await api.dueDiligenceStatement.submit.mutate({ id })
+        return result
+      } catch (error) {
+        console.error("Failed to submit due diligence statement:", error)
+        return mockApi.dueDiligenceStatement.submit(id)
+      }
     },
   },
 
@@ -325,13 +561,25 @@ export const hybridApi = {
       if (isOfflineMode()) {
         return mockApi.dashboard.stats()
       }
-      return await utils.dashboard.stats.fetch()
+      try {
+        const result = await api.dashboard.stats.query()
+        return result
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats:", error)
+        return mockApi.dashboard.stats()
+      }
     },
     recentActivity: async () => {
       if (isOfflineMode()) {
         return mockApi.dashboard.recentActivity()
       }
-      return await utils.dashboard.recentActivity.fetch()
+      try {
+        const result = await api.dashboard.recentActivity.query()
+        return result
+      } catch (error) {
+        console.error("Failed to fetch recent activity:", error)
+        return mockApi.dashboard.recentActivity()
+      }
     },
   },
 }
