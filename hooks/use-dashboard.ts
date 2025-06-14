@@ -64,7 +64,7 @@ export function useDashboard() {
     try {
       setIsLoading(true)
 
-      // Load all data from hybrid API
+      // Load all data from hybrid API using correct method names
       const [
         organizationsData,
         productsData,
@@ -75,14 +75,14 @@ export function useDashboard() {
         riskAssessmentsData,
         dueDiligenceData,
       ] = await Promise.all([
-        hybridApi.organizations.getAll(),
-        hybridApi.products.getAll(),
-        hybridApi.suppliers.getAll(),
-        hybridApi.customers.getAll(),
-        hybridApi.origins.getAll(),
-        hybridApi.rawMaterials.getAll(),
-        hybridApi.riskAssessments.getAll(),
-        hybridApi.dueDiligence.getAll(),
+        hybridApi.organization.list(),
+        hybridApi.product.list(),
+        hybridApi.supplier.list(),
+        hybridApi.customer.list(),
+        hybridApi.origin.list(),
+        hybridApi.rawMaterial.list(),
+        hybridApi.riskAssessment.list(),
+        hybridApi.dueDiligenceStatement.list(),
       ])
 
       // Calculate stats
@@ -133,7 +133,6 @@ export function useDashboard() {
       const totalItems = dashboardStats.organizations + dashboardStats.products + dashboardStats.suppliers
       const compliantItems = Math.floor(totalItems * 0.85) // 85% compliance rate
       const warningItems = Math.floor(totalItems * 0.1) // 10% warning
-      const dangerItems = totalItems - compliantItems - warningItems // remaining
 
       const metrics: ComplianceMetric[] = [
         {
