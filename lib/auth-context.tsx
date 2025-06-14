@@ -60,6 +60,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Store token in sessionStorage
       if (loginResult?.access_token) {
         sessionAuth.setToken(loginResult.access_token, "directus")
+        directusService.setToken(loginResult.access_token);
       }
 
       // Store user session data

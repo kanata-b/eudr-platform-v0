@@ -113,6 +113,16 @@ export class DirectusService {
     }
   }
 
+  async setToken(token: string | null) {
+    try {
+      const result = await this.client.setToken(token)
+      return result
+    } catch (error) {
+      console.log("No token available")
+      return null
+    }
+  }
+
   async clearToken() {
     try {
       // Clear the token from storage
