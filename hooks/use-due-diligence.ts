@@ -1,12 +1,15 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
-import { trpc } from "@/lib/trpc-client"
+import { hybridApi } from "@/lib/hybrid-api"
+import { useOfflineMode } from "@/lib/offline-context"
 import type { DueDiligenceStatement, CreateDueDiligenceStatementData, StatementStatus } from "@/types"
 
 export function useDueDiligence() {
+  const [statements, setStatements] = useState<DueDiligenceStatement[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingStatement, setEditingStatement] = useState<DueDiligenceStatement | null>(null)
   const [formData, setFormData] = useState<CreateDueDiligenceStatementData>({
@@ -30,35 +33,45 @@ export function useDueDiligence() {
     submission_date: "",
   })
   const { toast } = useToast()
+  const { isOffline } = useOfflineMode()
 
-  // tRPC queries and mutations
-  const { data: statements = [], isLoading, refetch } = trpc.dueDiligenceStatement.list.useQuery()
-  const createMutation = trpc.dueDiligenceStatement.create.useMutation()
-  const updateMutation = trpc.dueDiligenceStatement.update.useMutation()
-  const deleteMutation = trpc.dueDiligenceStatement.delete.useMutation()
-  const submitMutation = trpc.dueDiligenceStatement.submit.useMutation()
+  const loadStatements = async () => {
+    try {
+      setIsLoading(true)
+      const data = await hybridApi.dueDiligenceStatement.list()
+      setStatements(data)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load due diligence statements",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
       if (editingStatement) {
-        await updateMutation.mutateAsync({ id: editingStatement.id, data: formData })
+        await hybridApi.dueDiligenceStatement.update(editingStatement.id, formData)
         toast({
           title: "Success",
-          description: "Due diligence statement updated successfully",
+          description: `Due diligence statement updated successfully ${isOffline ? "(Demo Mode)" : ""}`,
         })
       } else {
-        await createMutation.mutateAsync({
+        await hybridApi.dueDiligenceStatement.create({
           ...formData,
           statement_number: `DDS-${Date.now()}`,
         })
         toast({
           title: "Success",
-          description: "Due diligence statement created successfully",
+          description: `Due diligence statement created successfully ${isOffline ? "(Demo Mode)" : ""}`,
         })
       }
       resetForm()
-      refetch()
+      loadStatements()
     } catch (error) {
       toast({
         title: "Error",
@@ -95,12 +108,12 @@ export function useDueDiligence() {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteMutation.mutateAsync({ id })
+      await hybridApi.dueDiligenceStatement.delete(id)
       toast({
         title: "Success",
-        description: "Due diligence statement deleted successfully",
+        description: `Due diligence statement deleted successfully ${isOffline ? "(Demo Mode)" : ""}`,
       })
-      refetch()
+      loadStatements()
     } catch (error) {
       toast({
         title: "Error",
@@ -112,12 +125,12 @@ export function useDueDiligence() {
 
   const handleSubmitStatement = async (id: string) => {
     try {
-      await submitMutation.mutateAsync({ id })
+      await hybridApi.dueDiligenceStatement.submit(id)
       toast({
         title: "Success",
-        description: "Due diligence statement submitted successfully",
+        description: `Due diligence statement submitted successfully ${isOffline ? "(Demo Mode)" : ""}`,
       })
-      refetch()
+      loadStatements()
     } catch (error) {
       toast({
         title: "Error",
@@ -179,6 +192,15 @@ export function useDueDiligence() {
   const approvedCount = statements.filter((s) => s.status === "approved").length
   const draftCount = statements.filter((s) => s.status === "draft").length
 
+  // Reload data when switching between offline/online modes
+  useEffect(() => {
+    loadStatements()
+  }, [isOffline])
+
+  useEffect(() => {
+    loadStatements()
+  }, [])
+
   return {
     // State
     statements,
@@ -211,58 +233,4 @@ export function useDueDiligence() {
     // Computed
     isEditing: !!editingStatement,
   }
-}
-
-// Additional granular hooks for specific use cases
-export function useDueDiligenceStatements(params?: {
-  limit?: number
-  offset?: number
-  search?: string
-  status?: "draft" | "submitted" | "approved" | "rejected"
-}) {
-  return trpc.dueDiligenceStatement.list.useQuery(params)
-}
-
-export function useDueDiligenceStatement(id: string) {
-  return trpc.dueDiligenceStatement.get.useQuery({ id }, { enabled: !!id })
-}
-
-export function useCreateDueDiligenceStatement() {
-  const utils = trpc.useUtils()
-
-  return trpc.dueDiligenceStatement.create.useMutation({
-    onSuccess: () => {
-      utils.dueDiligenceStatement.list.invalidate()
-    },
-  })
-}
-
-export function useUpdateDueDiligenceStatement() {
-  const utils = trpc.useUtils()
-
-  return trpc.dueDiligenceStatement.update.useMutation({
-    onSuccess: () => {
-      utils.dueDiligenceStatement.list.invalidate()
-    },
-  })
-}
-
-export function useDeleteDueDiligenceStatement() {
-  const utils = trpc.useUtils()
-
-  return trpc.dueDiligenceStatement.delete.useMutation({
-    onSuccess: () => {
-      utils.dueDiligenceStatement.list.invalidate()
-    },
-  })
-}
-
-export function useSubmitDueDiligenceStatement() {
-  const utils = trpc.useUtils()
-
-  return trpc.dueDiligenceStatement.submit.useMutation({
-    onSuccess: () => {
-      utils.dueDiligenceStatement.list.invalidate()
-    },
-  })
 }
