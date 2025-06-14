@@ -51,6 +51,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Get user info after successful login
       const currentUser = await directusService.getCurrentUser()
+      console.log(currentUser)
       setUser(currentUser as User)
 
       toast({
@@ -113,6 +114,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         // Check if we have a token first
         const hasToken = await directusService.getToken()
+        console.log(hasToken)
         if (!hasToken) {
           setUser(null)
           return
